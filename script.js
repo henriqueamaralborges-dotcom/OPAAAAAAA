@@ -12,26 +12,26 @@ let isTraining = { 0: false, 1: false };
 let modelLoaded = false;
 
 async function setupWebcam() {
-    return new Promise((resolve, reject) => {
-        const navigatorAny = navigator;
-        navigator.getUserMedia = navigator.getUserMedia ||
-            navigatorAny.webkitGetUserMedia || navigatorAny.mozGetUserMedia || navigatorAny.msGetUserMedia;
-        
-        if (navigator.getUserMedia) {
-            navigator.getUserMedia({ video: true },
-                stream => {
-                    webcamElement.srcObject = stream;
-                    webcamElement.addEventListener('loadeddata', () => {
-                        document.getElementById('loader').style.opacity = '0';
-                        setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-                        resolve();
-                    }, false);
-                },
-                error => reject());
-        } else {
-            reject();
-        }
-    });
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user' }, 
+            audio: false 
+        });
+        webcamElement.srcObject = stream;
+        return new Promise((resolve) => {
+            webcamElement.onloadedmetadata = () => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+                resolve();
+            };
+        });
+    } catch (err) {
+        console.error("Webcam Error:", err);
+        document.getElementById('status-badge').innerHTML = "⚠️ Erro de Câmera";
+        document.getElementById('status-badge').classList.replace('bg-amber-100', 'bg-red-100');
+        alert("Erro ao acessar a câmera. Certifique-se de estar em um ambiente seguro (HTTPS) e ter dado permissão.");
+        throw err;
+    }
 }
 
 async function app() {
@@ -59,24 +59,23 @@ async function app() {
     // Loop de Previsão
     while (true) {
         if (classifier.getNumClasses() > 0) {
-            // Get the activation from mobilenet from the webcam.
-            const activation = net.infer(webcamElement, 'conv_preds');
-            
-            // Get the most likely class and confidence from the classifier.
-            const result = await classifier.predictClass(activation);
-
-            const classes = [0, 1];
+            const result = await tf.tidy(() => {
+                const img = tf.browser.fromPixels(webcamElement);
+                const activation = net.infer(img, 'conv_preds');
+                return classifier.predictClass(activation);
+            });
             updateUI(result);
         }
 
-        // Training check
-        for (let i = 0; i < 2; i++) {
-            if (isTraining[i]) {
-                const activation = net.infer(webcamElement, 'conv_preds');
+        if (isTraining[0] || isTraining[1]) {
+            const i = isTraining[0] ? 0 : 1;
+            tf.tidy(() => {
+                const img = tf.browser.fromPixels(webcamElement);
+                const activation = net.infer(img, 'conv_preds');
                 classifier.addExample(activation, i);
-                counts[i]++;
-                updateCountsUI();
-            }
+            });
+            counts[isTraining[0] ? 0 : 1]++;
+            updateCountsUI();
         }
 
         await tf.nextFrame();

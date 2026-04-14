@@ -171,19 +171,32 @@ const setupButtons = () => {
     async function handleUpload(event, classId) {
         const files = event.target.files;
         if (!files.length) return;
-        document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Processando...`;
-        for (const file of files) {
-            const img = await loadImage(file);
-            await tf.nextFrame();
-            tf.tidy(() => {
-                const tensor = tf.browser.fromPixels(img);
-                const activation = net.infer(tensor, 'conv_preds');
-                classifier.addExample(activation, classId);
-            });
-            counts[classId]++;
+        
+        const badge = document.getElementById('status-badge');
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Processando ${files.length} fotos...`;
+        
+        try {
+            for (const file of files) {
+                const img = await loadImage(file);
+                // Force a small delay to keep UI responsive
+                await tf.nextFrame(); 
+                
+                tf.tidy(() => {
+                    const tensor = tf.browser.fromPixels(img)
+                        .resizeNearestNeighbor([224, 224]) // Match MobileNet input
+                        .toFloat()
+                        .expandDims();
+                    const activation = net.infer(tensor, 'conv_preds');
+                    classifier.addExample(activation, classId);
+                });
+                counts[classId]++;
+                updateCountsUI(); // Update UI after each image
+            }
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Sucesso (+${files.length})`;
+        } catch (err) {
+            console.error(err);
+            badge.innerHTML = `❌ Erro no Processamento`;
         }
-        updateCountsUI();
-        document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Pronto`;
         event.target.value = '';
     }
 
@@ -203,11 +216,23 @@ const setupButtons = () => {
     document.getElementById('test-upload').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        if (classifier.getNumClasses() === 0) {
+            alert("⚠️ Treine a IA primeiro (via Webcam ou Upload) antes de testar arquivos!");
+            return;
+        }
+
+        const badge = document.getElementById('status-badge');
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Analisando Arquivo...`;
+
         const img = await loadImage(file);
         tf.tidy(() => {
-            const tensor = tf.browser.fromPixels(img);
+            const tensor = tf.browser.fromPixels(img).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
             const activation = net.infer(tensor, 'conv_preds');
-            classifier.predictClass(activation).then(updateUI);
+            classifier.predictClass(activation).then(res => {
+                updateUI(res);
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Analisado`;
+            });
         });
         e.target.value = '';
     });

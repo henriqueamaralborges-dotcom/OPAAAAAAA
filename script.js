@@ -43,6 +43,10 @@ async function app() {
     console.log('Successfully loaded model');
     modelLoaded = true;
     
+    // Optimize for Speed
+    await tf.setBackend('webgl');
+    console.log('Using Backend:', tf.getBackend());
+    
     // UI Update
     document.getElementById('status-badge').innerHTML = `
         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -58,8 +62,12 @@ async function app() {
     await setupWebcam();
 
     // Loop de Previsão
+    let frame = 0;
     while (true) {
-        if (isPredicting && classifier.getNumClasses() > 0) {
+        frame++;
+        
+        // Predict every 2 frames to keep UI responsive and reduce CPU heat
+        if (isPredicting && classifier.getNumClasses() > 0 && frame % 2 === 0) {
             const activation = net.infer(webcamElement, 'conv_preds');
             const result = await classifier.predictClass(activation);
             updateUI(result);

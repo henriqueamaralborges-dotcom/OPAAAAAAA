@@ -98,13 +98,28 @@ function updateUI(result) {
     document.getElementById('prob-b-bar').style.width = `${probB * 100}%`;
     document.getElementById('prob-b-text').innerText = `${Math.round(probB * 100)}%`;
 
-    // Highlight Winner
-    if (probA > 0.6) {
+    // Final Verdict Logic
+    const verdictText = document.getElementById('verdict-text');
+    const verdictBox = document.getElementById('verdict-box');
+    const labelA = document.querySelector('#class-a-card input').value;
+    const labelB = document.querySelector('#class-b-card input').value;
+
+    if (probA > 0.5 && probA > probB) {
+        verdictText.innerText = labelA;
+        verdictText.style.color = "#3b82f6";
+        verdictBox.style.boxShadow = "inset 0 0 20px rgba(59, 130, 246, 0.4)";
         document.getElementById('class-a-card').style.borderColor = '#3b82f6';
         document.getElementById('class-b-card').style.borderColor = '#f1f5f9';
-    } else if (probB > 0.6) {
+    } else if (probB > 0.5 && probB > probA) {
+        verdictText.innerText = labelB;
+        verdictText.style.color = "#6366f1";
+        verdictBox.style.boxShadow = "inset 0 0 20px rgba(99, 102, 241, 0.4)";
         document.getElementById('class-b-card').style.borderColor = '#6366f1';
         document.getElementById('class-a-card').style.borderColor = '#f1f5f9';
+    } else {
+        verdictText.innerText = "Incerto";
+        verdictText.style.color = "#94a3b8";
+        verdictBox.style.boxShadow = "none";
     }
 }
 

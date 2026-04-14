@@ -31,7 +31,7 @@
         <main class="flex-1 container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Left: Training Panel -->
             <section class="lg:col-span-4 space-y-6">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                <div class="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
                     <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
                         <span class="bg-blue-100 text-blue-600 w-6 h-6 rounded flex items-center justify-center text-sm">1</span>
                         Treinamento
@@ -90,11 +90,17 @@
 
                     <div class="flex gap-2">
                         <button id="reset-btn" class="flex-1 text-xs text-slate-400 hover:text-red-500 mt-2 transition-colors">Limpar Tudo</button>
-                        <button id="export-btn" class="flex-1 text-xs text-slate-400 hover:text-blue-500 mt-2 transition-colors">Exportar Modelo</button>
+                        <div class="flex flex-1 gap-2 mt-2">
+                            <button id="export-btn" class="flex-1 text-[10px] text-slate-400 hover:text-blue-500 transition-colors border border-slate-200 rounded py-1">Exportar</button>
+                            <label class="flex-1 text-[10px] text-slate-400 hover:text-emerald-500 transition-colors border border-slate-200 rounded py-1 text-center cursor-pointer">
+                                Importar
+                                <input type="file" id="import-upload" class="hidden" accept="application/json">
+                            </label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h2 class="text-sm font-semibold mb-4 text-slate-500 uppercase tracking-wider">Testar Documento/Foto</h2>
                     <label class="block w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-center cursor-pointer hover:border-blue-400 transition-colors">
                         <span class="text-xs text-slate-400">Clique para testar arquivo</span>
@@ -105,7 +111,7 @@
 
             <!-- Center: Video Panel -->
             <section class="lg:col-span-5">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-fit">
+                <div class="glass-panel rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-fit">
                     <div class="p-4 border-b border-slate-100 flex justify-between items-center">
                         <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Webcam em Tempo Real</h2>
                         <div class="flex gap-2">
@@ -134,7 +140,7 @@
 
             <!-- Right: Prediction Panel -->
             <section class="lg:col-span-3 space-y-6">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                <div class="glass-panel p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
                     <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
                         <span class="bg-blue-100 text-blue-600 w-6 h-6 rounded flex items-center justify-center text-sm">2</span>
                         Predição

@@ -60,21 +60,15 @@ async function app() {
     // Loop de Previsão
     while (true) {
         if (isPredicting && classifier.getNumClasses() > 0) {
-            const result = await tf.tidy(() => {
-                const img = tf.browser.fromPixels(webcamElement);
-                const activation = net.infer(img, 'conv_preds');
-                return classifier.predictClass(activation);
-            });
+            const activation = net.infer(webcamElement, 'conv_preds');
+            const result = await classifier.predictClass(activation);
             updateUI(result);
         }
 
         if (isTraining[0] || isTraining[1] || isTraining[2]) {
             let i = isTraining[0] ? 0 : (isTraining[1] ? 1 : 2);
-            tf.tidy(() => {
-                const img = tf.browser.fromPixels(webcamElement);
-                const activation = net.infer(img, 'conv_preds');
-                classifier.addExample(activation, i);
-            });
+            const activation = net.infer(webcamElement, 'conv_preds');
+            classifier.addExample(activation, i);
             counts[i]++;
             updateCountsUI();
         }
@@ -116,18 +110,20 @@ function updateUI(result) {
         verdictText.innerText = labelC;
         verdictText.style.color = "#94a3b8";
         verdictBox.style.boxShadow = "none";
-    } else if (probA > 0.45 && probA > probB && probA > probC) {
         verdictText.innerText = labelA;
         verdictText.style.color = "#3b82f6";
-        verdictBox.style.boxShadow = "inset 0 0 20px rgba(59, 130, 246, 0.4)";
+        verdictBox.style.boxShadow = "0 0 30px rgba(59, 130, 246, 0.4)";
+        verdictBox.style.borderColor = "rgba(59, 130, 246, 0.5)";
     } else if (probB > 0.45 && probB > probA && probB > probC) {
         verdictText.innerText = labelB;
         verdictText.style.color = "#6366f1";
-        verdictBox.style.boxShadow = "inset 0 0 20px rgba(99, 102, 241, 0.4)";
+        verdictBox.style.boxShadow = "0 0 30px rgba(99, 102, 241, 0.4)";
+        verdictBox.style.borderColor = "rgba(99, 102, 241, 0.5)";
     } else {
         verdictText.innerText = "Analisando...";
         verdictText.style.color = "#94a3b8";
         verdictBox.style.boxShadow = "none";
+        verdictBox.style.borderColor = "transparent";
     }
 }
 
@@ -174,30 +170,17 @@ const setupButtons = () => {
         if (!files.length) return;
         
         const badge = document.getElementById('status-badge');
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Processando ${files.length} fotos...`;
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Processando...`;
         
-        try {
-            for (const file of files) {
-                const img = await loadImage(file);
-                // Force a small delay to keep UI responsive
-                await tf.nextFrame(); 
-                
-                tf.tidy(() => {
-                    const tensor = tf.browser.fromPixels(img)
-                        .resizeNearestNeighbor([224, 224]) // Match MobileNet input
-                        .toFloat()
-                        .expandDims();
-                    const activation = net.infer(tensor, 'conv_preds');
-                    classifier.addExample(activation, classId);
-                });
-                counts[classId]++;
-                updateCountsUI(); // Update UI after each image
-            }
-            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Sucesso (+${files.length})`;
-        } catch (err) {
-            console.error(err);
-            badge.innerHTML = `❌ Erro no Processamento`;
+        for (const file of files) {
+            const img = await loadImage(file);
+            const activation = net.infer(img, 'conv_preds');
+            classifier.addExample(activation, classId);
+            counts[classId]++;
+            updateCountsUI();
+            await tf.nextFrame(); 
         }
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Sucesso (+${files.length})`;
         event.target.value = '';
     }
 
@@ -219,22 +202,14 @@ const setupButtons = () => {
         if (!file) return;
 
         if (classifier.getNumClasses() === 0) {
-            alert("⚠️ Treine a IA primeiro (via Webcam ou Upload) antes de testar arquivos!");
+            alert("⚠️ Treine a IA primeiro!");
             return;
         }
 
-        const badge = document.getElementById('status-badge');
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Analisando Arquivo...`;
-
         const img = await loadImage(file);
-        tf.tidy(() => {
-            const tensor = tf.browser.fromPixels(img).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
-            const activation = net.infer(tensor, 'conv_preds');
-            classifier.predictClass(activation).then(res => {
-                updateUI(res);
-                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Analisado`;
-            });
-        });
+        const activation = net.infer(img, 'conv_preds');
+        const res = await classifier.predictClass(activation);
+        updateUI(res);
         e.target.value = '';
     });
 
@@ -252,6 +227,38 @@ const setupButtons = () => {
         a.href = url;
         a.download = 'modelo_ia.json';
         a.click();
+    };
+
+    // Import
+    document.getElementById('import-upload').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const datasetJson = JSON.parse(event.target.result);
+                const dataset = {};
+                Object.keys(datasetJson).forEach((key) => {
+                    dataset[key] = tf.tensor2d(datasetJson[key], [datasetJson[key].length / 1024, 1024]);
+                });
+                classifier.setClassifierDataset(dataset);
+                
+                // Recalculate counts
+                counts = { 0: 0, 1: 0, 2: 0 };
+                Object.keys(dataset).forEach(key => {
+                    counts[key] = dataset[key].shape[0];
+                });
+                updateCountsUI();
+                
+                document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Modelo Importado!`;
+                alert("Modelo carregado com sucesso!");
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao importar modelo. Verifique se o arquivo JSON é válido.");
+            }
+        };
+        reader.readAsText(file);
     };
 
     // Toggle Prediction Button

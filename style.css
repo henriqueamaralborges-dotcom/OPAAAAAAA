@@ -1,6 +1,21 @@
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --primary-glow: rgba(59, 130, 246, 0.5);
+}
+
 body {
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
+    background: radial-gradient(circle at 50% 50%, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
 }
 
 /* Custom Styles */
@@ -8,11 +23,12 @@ body {
     animation: pulsing 1.5s infinite;
     border-color: #3b82f6 !important;
     background-color: #eff6ff !important;
+    transform: scale(1.02);
 }
 
 @keyframes pulsing {
     0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
     100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
 
@@ -33,11 +49,30 @@ body {
 
 /* Prediction Bars Glow */
 #prob-a-bar {
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
 }
 
 #prob-b-bar {
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+}
+
+/* Layout Optimizations */
+section {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+section:hover {
+    transform: translateY(-2px);
+}
+
+/* Verdict Box Enhancements */
+#verdict-box {
+    border: 2px solid transparent;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#verdict-text {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
 /* Mobile Optimizations */

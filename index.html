@@ -43,9 +43,15 @@
                             <input type="text" value="Classe 1" class="bg-transparent font-bold text-slate-700 outline-none w-2/3 border-b border-transparent focus:border-blue-400">
                             <span id="class-a-count" class="text-xs bg-slate-200 px-2 py-0.5 rounded text-slate-500 font-mono">0 amostras</span>
                         </div>
-                        <button id="class-a-btn" class="w-full py-3 bg-white border border-slate-300 rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:opacity-50 hover:bg-slate-100 cursor-pointer" disabled>
-                            Segurar para Gravar
-                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="class-a-btn" class="py-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold active:scale-95 disabled:opacity-50 hover:bg-slate-100" disabled>
+                                🎥 Gravar
+                            </button>
+                            <label class="py-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-center cursor-pointer hover:bg-slate-100 active:scale-95">
+                                📁 Upload
+                                <input type="file" id="class-a-upload" class="hidden" accept="image/*" multiple>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Class B -->
@@ -54,12 +60,29 @@
                             <input type="text" value="Classe 2" class="bg-transparent font-bold text-slate-700 outline-none w-2/3 border-b border-transparent focus:border-blue-400">
                             <span id="class-b-count" class="text-xs bg-slate-200 px-2 py-0.5 rounded text-slate-500 font-mono">0 amostras</span>
                         </div>
-                        <button id="class-b-btn" class="w-full py-3 bg-white border border-slate-300 rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:opacity-50 hover:bg-slate-100 cursor-pointer" disabled>
-                            Segurar para Gravar
-                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="class-b-btn" class="py-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold active:scale-95 disabled:opacity-50 hover:bg-slate-100" disabled>
+                                🎥 Gravar
+                            </button>
+                            <label class="py-3 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-center cursor-pointer hover:bg-slate-100 active:scale-95">
+                                📁 Upload
+                                <input type="file" id="class-b-upload" class="hidden" accept="image/*" multiple>
+                            </label>
+                        </div>
                     </div>
 
-                    <button id="reset-btn" class="w-full text-xs text-slate-400 hover:text-red-500 mt-2 transition-colors">Limpar Dados de Treino</button>
+                    <div class="flex gap-2">
+                        <button id="reset-btn" class="flex-1 text-xs text-slate-400 hover:text-red-500 mt-2 transition-colors">Limpar Tudo</button>
+                        <button id="export-btn" class="flex-1 text-xs text-slate-400 hover:text-blue-500 mt-2 transition-colors">Exportar Modelo</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h2 class="text-sm font-semibold mb-4 text-slate-500 uppercase tracking-wider">Testar Documento/Foto</h2>
+                    <label class="block w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-center cursor-pointer hover:border-blue-400 transition-colors">
+                        <span class="text-xs text-slate-400">Clique para testar arquivo</span>
+                        <input type="file" id="test-upload" class="hidden" accept="image/*">
+                    </label>
                 </div>
             </section>
 

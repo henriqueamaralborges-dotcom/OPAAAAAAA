@@ -138,6 +138,79 @@ const setupButtons = () => {
     btnB.addEventListener('touchstart', (e) => { e.preventDefault(); isTraining[1] = true; cardB.classList.add('recording'); });
     btnB.addEventListener('touchend', () => { isTraining[1] = false; cardB.classList.remove('recording'); });
 
+    // File Upload Listeners
+    const handleUpload = async (event, classId) => {
+        const files = event.target.files;
+        if (!files.length) return;
+
+        document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Processando...`;
+        
+        for (const file of files) {
+            const img = await loadImage(file);
+            await tf.nextFrame();
+            tf.tidy(() => {
+                const tensor = tf.browser.fromPixels(img);
+                const activation = net.infer(tensor, 'conv_preds');
+                classifier.addExample(activation, classId);
+            });
+            counts[classId]++;
+        }
+        
+        updateCountsUI();
+        document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Pronto`;
+        event.target.value = ''; // Reset input
+    };
+
+    const loadImage = (file) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    document.getElementById('class-a-upload').addEventListener('change', (e) => handleUpload(e, 0));
+    document.getElementById('class-b-upload').addEventListener('change', (e) => handleUpload(e, 1));
+
+    // Test Upload Listener
+    document.getElementById('test-upload').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const img = await loadImage(file);
+        tf.tidy(() => {
+            const tensor = tf.browser.fromPixels(img);
+            const activation = net.infer(tensor, 'conv_preds');
+            classifier.predictClass(activation).then(updateUI);
+        });
+        
+        // Show the tested image briefly or in the main view?
+        // For simplicity, we just trigger the UI update.
+        e.target.value = '';
+    });
+
+    // Export Logic
+    document.getElementById('export-btn').onclick = () => {
+        const dataset = classifier.getClassifierDataset();
+        const datasetObj = {};
+        Object.keys(dataset).forEach((key) => {
+            const data = dataset[key].dataSync();
+            datasetObj[key] = Array.from(data);
+        });
+        
+        const jsonStr = JSON.stringify(datasetObj);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'modelo_ia.json';
+        a.click();
+    };
+
     // Reset
     document.getElementById('reset-btn').onclick = () => {
         classifier.clearAllClasses();

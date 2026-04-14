@@ -11,6 +11,8 @@ let counts = { 0: 0, 1: 0, 2: 0 };
 let isTraining = { 0: false, 1: false, 2: false };
 let isPredicting = false; // Toggle state
 let modelLoaded = false;
+let smoothedProbs = { 0: 0, 1: 0, 2: 0 };
+const SMOOTHING = 0.2; // 0 to 1, lower is smoother
 
 async function setupWebcam() {
     try {
@@ -90,9 +92,15 @@ function updateUI(result) {
     const container = document.getElementById('prediction-container');
     container.classList.remove('opacity-50', 'grayscale');
 
-    const probA = result.confidences[0] || 0;
-    const probB = result.confidences[1] || 0;
-    const probC = result.confidences[2] || 0;
+    // Apply Smoothing (EMA)
+    [0, 1, 2].forEach(id => {
+        const rawProb = result.confidences[id] || 0;
+        smoothedProbs[id] = (rawProb * SMOOTHING) + (smoothedProbs[id] * (1 - SMOOTHING));
+    });
+
+    const probA = smoothedProbs[0];
+    const probB = smoothedProbs[1];
+    const probC = smoothedProbs[2];
 
     // Bar A
     document.getElementById('prob-a-bar').style.width = `${probA * 100}%`;
@@ -298,6 +306,7 @@ const setupButtons = () => {
             badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Análise Pausada`;
             document.getElementById('prediction-container').classList.add('opacity-50', 'grayscale');
             document.getElementById('verdict-text').innerText = "Pausado";
+            smoothedProbs = { 0: 0, 1: 0, 2: 0 };
         }
     };
 
@@ -308,6 +317,7 @@ const setupButtons = () => {
             counts = { 0: 0, 1: 0, 2: 0 };
             updateCountsUI();
             isPredicting = false;
+            smoothedProbs = { 0: 0, 1: 0, 2: 0 };
             // UI Reset
             toggleBtn.classList.replace('bg-red-600', 'bg-blue-600');
             document.getElementById('btn-text').innerText = "Iniciar Análise";

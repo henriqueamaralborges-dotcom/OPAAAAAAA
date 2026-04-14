@@ -110,6 +110,8 @@ function updateUI(result) {
         verdictText.innerText = labelC;
         verdictText.style.color = "#94a3b8";
         verdictBox.style.boxShadow = "none";
+        verdictBox.style.borderColor = "transparent";
+    } else if (probA > 0.45 && probA > probB && probA > probC) {
         verdictText.innerText = labelA;
         verdictText.style.color = "#3b82f6";
         verdictBox.style.boxShadow = "0 0 30px rgba(59, 130, 246, 0.4)";

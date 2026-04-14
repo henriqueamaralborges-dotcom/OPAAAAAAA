@@ -7,8 +7,8 @@ const webcamElement = document.getElementById('webcam');
 let net;
 
 // State
-let counts = { 0: 0, 1: 0 };
-let isTraining = { 0: false, 1: false };
+let counts = { 0: 0, 1: 0, 2: 0 };
+let isTraining = { 0: false, 1: false, 2: false };
 let modelLoaded = false;
 
 async function setupWebcam() {
@@ -67,14 +67,14 @@ async function app() {
             updateUI(result);
         }
 
-        if (isTraining[0] || isTraining[1]) {
-            const i = isTraining[0] ? 0 : 1;
+        if (isTraining[0] || isTraining[1] || isTraining[2]) {
+            let i = isTraining[0] ? 0 : (isTraining[1] ? 1 : 2);
             tf.tidy(() => {
                 const img = tf.browser.fromPixels(webcamElement);
                 const activation = net.infer(img, 'conv_preds');
                 classifier.addExample(activation, i);
             });
-            counts[isTraining[0] ? 0 : 1]++;
+            counts[i]++;
             updateCountsUI();
         }
 
@@ -89,6 +89,7 @@ function updateUI(result) {
 
     const probA = result.confidences[0] || 0;
     const probB = result.confidences[1] || 0;
+    const probC = result.confidences[2] || 0;
 
     // Bar A
     document.getElementById('prob-a-bar').style.width = `${probA * 100}%`;
@@ -98,26 +99,32 @@ function updateUI(result) {
     document.getElementById('prob-b-bar').style.width = `${probB * 100}%`;
     document.getElementById('prob-b-text').innerText = `${Math.round(probB * 100)}%`;
 
+    // Bar C
+    document.getElementById('prob-c-bar').style.width = `${probC * 100}%`;
+    document.getElementById('prob-c-text').innerText = `${Math.round(probC * 100)}%`;
+
     // Final Verdict Logic
     const verdictText = document.getElementById('verdict-text');
     const verdictBox = document.getElementById('verdict-box');
     const labelA = document.querySelector('#class-a-card input').value;
     const labelB = document.querySelector('#class-b-card input').value;
+    const labelC = document.querySelector('#class-c-card input').value;
 
-    if (probA > 0.5 && probA > probB) {
+    // Use a higher threshold for non-neutral classes
+    if (probC > 0.7 && probC > probA && probC > probB) {
+        verdictText.innerText = labelC;
+        verdictText.style.color = "#94a3b8";
+        verdictBox.style.boxShadow = "none";
+    } else if (probA > 0.45 && probA > probB && probA > probC) {
         verdictText.innerText = labelA;
         verdictText.style.color = "#3b82f6";
         verdictBox.style.boxShadow = "inset 0 0 20px rgba(59, 130, 246, 0.4)";
-        document.getElementById('class-a-card').style.borderColor = '#3b82f6';
-        document.getElementById('class-b-card').style.borderColor = '#f1f5f9';
-    } else if (probB > 0.5 && probB > probA) {
+    } else if (probB > 0.45 && probB > probA && probB > probC) {
         verdictText.innerText = labelB;
         verdictText.style.color = "#6366f1";
         verdictBox.style.boxShadow = "inset 0 0 20px rgba(99, 102, 241, 0.4)";
-        document.getElementById('class-b-card').style.borderColor = '#6366f1';
-        document.getElementById('class-a-card').style.borderColor = '#f1f5f9';
     } else {
-        verdictText.innerText = "Incerto";
+        verdictText.innerText = "Analisando...";
         verdictText.style.color = "#94a3b8";
         verdictBox.style.boxShadow = "none";
     }
@@ -126,40 +133,45 @@ function updateUI(result) {
 function updateCountsUI() {
     document.getElementById('class-a-count').innerText = `${counts[0]} amostras`;
     document.getElementById('class-b-count').innerText = `${counts[1]} amostras`;
+    document.getElementById('class-c-count').innerText = `${counts[2]} amostras`;
 }
 
 // Event Listeners for Training
 const setupButtons = () => {
-    // Class A
-    const btnA = document.getElementById('class-a-btn');
-    const cardA = document.getElementById('class-a-card');
-    
-    btnA.addEventListener('mousedown', () => { isTraining[0] = true; cardA.classList.add('recording'); });
-    btnA.addEventListener('mouseup', () => { isTraining[0] = false; cardA.classList.remove('recording'); });
-    btnA.addEventListener('mouseleave', () => { isTraining[0] = false; cardA.classList.remove('recording'); });
-    
-    // Touch support
-    btnA.addEventListener('touchstart', (e) => { e.preventDefault(); isTraining[0] = true; cardA.classList.add('recording'); });
-    btnA.addEventListener('touchend', () => { isTraining[0] = false; cardA.classList.remove('recording'); });
+    // Buttons for 3 Classes
+    [0, 1, 2].forEach(id => {
+        const char = String.fromCharCode(97 + id); // a, b, c
+        const btn = document.getElementById(`class-${char}-btn`);
+        const card = document.getElementById(`class-${char}-card`);
+        const upload = document.getElementById(`class-${char}-upload`);
+        
+        if (btn) {
+            btn.disabled = false;
+            btn.addEventListener('mousedown', () => { isTraining[id] = true; card.classList.add('recording'); });
+            btn.addEventListener('mouseup', () => { isTraining[id] = false; card.classList.remove('recording'); });
+            btn.addEventListener('mouseleave', () => { isTraining[id] = false; card.classList.remove('recording'); });
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); isTraining[id] = true; card.classList.add('recording'); });
+            btn.addEventListener('touchend', () => { isTraining[id] = false; card.classList.remove('recording'); });
+        }
 
-    // Class B
-    const btnB = document.getElementById('class-b-btn');
-    const cardB = document.getElementById('class-b-card');
-    
-    btnB.addEventListener('mousedown', () => { isTraining[1] = true; cardB.classList.add('recording'); });
-    btnB.addEventListener('mouseup', () => { isTraining[1] = false; cardB.classList.remove('recording'); });
-    btnB.addEventListener('mouseleave', () => { isTraining[1] = false; cardB.classList.remove('recording'); });
-    
-    btnB.addEventListener('touchstart', (e) => { e.preventDefault(); isTraining[1] = true; cardB.classList.add('recording'); });
-    btnB.addEventListener('touchend', () => { isTraining[1] = false; cardB.classList.remove('recording'); });
+        if (upload) {
+            upload.addEventListener('change', (e) => handleUpload(e, id));
+        }
 
-    // File Upload Listeners
-    const handleUpload = async (event, classId) => {
+        const input = document.querySelector(`#class-${char}-card input`);
+        if (input) {
+            input.addEventListener('input', (e) => {
+                const label = document.getElementById(`label-${char}-text`);
+                if (label) label.innerText = e.target.value;
+            });
+        }
+    });
+
+    // Shared Upload Logic
+    async function handleUpload(event, classId) {
         const files = event.target.files;
         if (!files.length) return;
-
         document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-spin"></span> Processando...`;
-        
         for (const file of files) {
             const img = await loadImage(file);
             await tf.nextFrame();
@@ -170,13 +182,12 @@ const setupButtons = () => {
             });
             counts[classId]++;
         }
-        
         updateCountsUI();
         document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Pronto`;
-        event.target.value = ''; // Reset input
-    };
+        event.target.value = '';
+    }
 
-    const loadImage = (file) => {
+    function loadImage(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -186,29 +197,22 @@ const setupButtons = () => {
             };
             reader.readAsDataURL(file);
         });
-    };
+    }
 
-    document.getElementById('class-a-upload').addEventListener('change', (e) => handleUpload(e, 0));
-    document.getElementById('class-b-upload').addEventListener('change', (e) => handleUpload(e, 1));
-
-    // Test Upload Listener
+    // Test Upload
     document.getElementById('test-upload').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const img = await loadImage(file);
         tf.tidy(() => {
             const tensor = tf.browser.fromPixels(img);
             const activation = net.infer(tensor, 'conv_preds');
             classifier.predictClass(activation).then(updateUI);
         });
-        
-        // Show the tested image briefly or in the main view?
-        // For simplicity, we just trigger the UI update.
         e.target.value = '';
     });
 
-    // Export Logic
+    // Export
     document.getElementById('export-btn').onclick = () => {
         const dataset = classifier.getClassifierDataset();
         const datasetObj = {};
@@ -216,9 +220,7 @@ const setupButtons = () => {
             const data = dataset[key].dataSync();
             datasetObj[key] = Array.from(data);
         });
-        
-        const jsonStr = JSON.stringify(datasetObj);
-        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(datasetObj)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -229,21 +231,16 @@ const setupButtons = () => {
     // Reset
     document.getElementById('reset-btn').onclick = () => {
         classifier.clearAllClasses();
-        counts = { 0: 0, 1: 0 };
+        counts = { 0: 0, 1: 0, 2: 0 };
         updateCountsUI();
         document.getElementById('prediction-container').classList.add('opacity-50', 'grayscale');
+        document.getElementById('verdict-text').innerText = "Reiniciado";
     };
-
-    // Dynamic Label Sync
-    const inputA = document.querySelector('#class-a-card input');
-    const inputB = document.querySelector('#class-b-card input');
-    
-    inputA.addEventListener('input', (e) => document.getElementById('label-a-text').innerText = e.target.value);
-    inputB.addEventListener('input', (e) => document.getElementById('label-b-text').innerText = e.target.value);
 };
 
 setupButtons();
 app().catch(err => {
     console.error(err);
-    document.getElementById('status-badge').innerHTML = "❌ Erro ao carregar";
+    document.getElementById('status-badge').innerHTML = "❌ Erro";
 });
+

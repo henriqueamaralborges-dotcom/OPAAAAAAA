@@ -71,6 +71,23 @@
                         </div>
                     </div>
 
+                    <!-- Class C (Neutral) -->
+                    <div id="class-c-card" class="mb-6 p-4 rounded-xl border-2 border-slate-100 bg-emerald-50/30 transition-colors">
+                        <div class="flex justify-between items-center mb-3">
+                            <input type="text" value="Fundo / Vazio" class="bg-transparent font-bold text-emerald-700 outline-none w-2/3 border-b border-transparent focus:border-emerald-400 text-xs">
+                            <span id="class-c-count" class="text-[10px] bg-emerald-100 px-2 py-0.5 rounded text-emerald-600 font-mono">0 amostras</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="class-c-btn" class="py-2 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-600 active:scale-95 disabled:opacity-50 hover:bg-emerald-50" disabled>
+                                🎥 Gravar Fundo
+                            </button>
+                            <label class="py-2 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-600 text-center cursor-pointer hover:bg-emerald-50 active:scale-95">
+                                📁 Upload
+                                <input type="file" id="class-c-upload" class="hidden" accept="image/*" multiple>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="flex gap-2">
                         <button id="reset-btn" class="flex-1 text-xs text-slate-400 hover:text-red-500 mt-2 transition-colors">Limpar Tudo</button>
                         <button id="export-btn" class="flex-1 text-xs text-slate-400 hover:text-blue-500 mt-2 transition-colors">Exportar Modelo</button>
@@ -141,6 +158,17 @@
                             </div>
                             <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                                 <div id="prob-b-bar" class="h-full bg-indigo-500 transition-all duration-200 w-0"></div>
+                            </div>
+                        </div>
+
+                        <!-- Result C -->
+                        <div class="space-y-1 opacity-40">
+                            <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400">
+                                <span id="label-c-text">Fundo</span>
+                                <span id="prob-c-text">0%</span>
+                            </div>
+                            <div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="prob-c-bar" class="h-full bg-slate-400 transition-all w-0"></div>
                             </div>
                         </div>
 

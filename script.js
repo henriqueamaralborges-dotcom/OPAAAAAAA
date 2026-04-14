@@ -9,6 +9,7 @@ let net;
 // State
 let counts = { 0: 0, 1: 0, 2: 0 };
 let isTraining = { 0: false, 1: false, 2: false };
+let isPredicting = false; // Toggle state
 let modelLoaded = false;
 
 async function setupWebcam() {
@@ -58,7 +59,7 @@ async function app() {
 
     // Loop de Previsão
     while (true) {
-        if (classifier.getNumClasses() > 0) {
+        if (isPredicting && classifier.getNumClasses() > 0) {
             const result = await tf.tidy(() => {
                 const img = tf.browser.fromPixels(webcamElement);
                 const activation = net.infer(img, 'conv_preds');
@@ -253,13 +254,51 @@ const setupButtons = () => {
         a.click();
     };
 
-    // Reset
+    // Toggle Prediction Button
+    const toggleBtn = document.getElementById('toggle-predict-btn');
+    toggleBtn.onclick = () => {
+        if (classifier.getNumClasses() === 0) {
+            alert("⚠️ Treine a IA primeiro com algumas fotos ou pela webcam!");
+            return;
+        }
+        
+        isPredicting = !isPredicting;
+        const btnText = document.getElementById('btn-text');
+        const btnIcon = document.getElementById('btn-icon');
+        const badge = document.getElementById('status-badge');
+        
+        if (isPredicting) {
+            toggleBtn.classList.replace('bg-blue-600', 'bg-red-600');
+            toggleBtn.classList.replace('hover:bg-blue-700', 'hover:bg-red-700');
+            btnText.innerText = "Parar Análise";
+            btnIcon.innerText = "⏹";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span> IA Analisando Transmissão...`;
+        } else {
+            toggleBtn.classList.replace('bg-red-600', 'bg-blue-600');
+            toggleBtn.classList.replace('hover:bg-red-700', 'hover:bg-blue-700');
+            btnText.innerText = "Iniciar Análise";
+            btnIcon.innerText = "▶";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Análise Pausada`;
+            document.getElementById('prediction-container').classList.add('opacity-50', 'grayscale');
+            document.getElementById('verdict-text').innerText = "Pausado";
+        }
+    };
+
+    // Reset Logic
     document.getElementById('reset-btn').onclick = () => {
-        classifier.clearAllClasses();
-        counts = { 0: 0, 1: 0, 2: 0 };
-        updateCountsUI();
-        document.getElementById('prediction-container').classList.add('opacity-50', 'grayscale');
-        document.getElementById('verdict-text').innerText = "Reiniciado";
+        if (confirm("Tem certeza que deseja apagar todo o treinamento?")) {
+            classifier.clearAllClasses();
+            counts = { 0: 0, 1: 0, 2: 0 };
+            updateCountsUI();
+            isPredicting = false;
+            // UI Reset
+            toggleBtn.classList.replace('bg-red-600', 'bg-blue-600');
+            document.getElementById('btn-text').innerText = "Iniciar Análise";
+            document.getElementById('btn-icon').innerText = "▶";
+            document.getElementById('prediction-container').classList.add('opacity-50', 'grayscale');
+            document.getElementById('verdict-text').innerText = "Reiniciado";
+            document.getElementById('status-badge').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Dados Limpos`;
+        }
     };
 };
 
